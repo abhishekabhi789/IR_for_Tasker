@@ -1,0 +1,50 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.abhi.irfortasker'
+    compileSdk 33
+
+    defaultConfig {
+        applicationId "com.abhi.irfortasker"
+        minSdk 23
+        targetSdk 33
+        versionCode 10
+        versionName "0.1.0"
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    applicationVariants.configureEach { variant ->
+        variant.outputs.configureEach {
+            def appName = "IR4Tasker"
+            def versionName = variant.versionName
+            outputFileName = "${appName}_v${versionName}.apk"
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.10.1'
+    implementation 'com.joaomgcd:taskerpluginlibrary:0.4.7'
+    //test
+    testImplementation 'junit:junit:4.13.2'
+}

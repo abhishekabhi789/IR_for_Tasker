@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="appButtons" parent="@android:style/Widget.Button">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_gravity">center_horizontal</item>
+        <item name="android:layout_margin">16dp</item>
+        <item name="android:backgroundTint">@color/yellow</item>
+        <item name="android:drawableTint">?android:textColorPrimaryInverse</item>
+        <item name="android:tint">?android:textColorPrimaryInverse</item>
+        <item name="android:background">@drawable/round_box</item>
+        <item name="android:textColor">?android:textColorPrimaryInverse</item>
+        <item name="android:padding" tools:ignore="NewApi">10dp</item>
+    </style>
+
+    <style name="appEditTexts" parent="@android:style/Widget.EditText">
+        <item name="android:background">@drawable/round_box</item>
+        <item name="android:editTextBackground">?android:editTextBackground</item>
+        <!--<item name="android:backgroundTint">?android:textColorPrimaryInverse</item>-->
+    </style>
+</resources>

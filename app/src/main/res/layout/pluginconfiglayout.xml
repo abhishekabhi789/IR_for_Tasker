@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/codeInputField"
+            style="@style/appEditTexts"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"
+            android:fontFamily="monospace"
+            android:hint="@string/input_code_field_hint"
+            android:importantForAutofill="no"
+            android:inputType="textMultiLine"
+            android:maxHeight="400dp"
+            android:padding="10dp"
+            tools:text="0000 1111 2222 3333 4444 5555 6666 7777 8888 9999" />
+
+        <ImageButton
+            android:id="@+id/variableButton"
+            style="@style/appButtons"
+            android:layout_gravity="end|center_vertical"
+            android:contentDescription="@string/input_variable_import_button_label"
+            android:padding="20dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_tasker_variable" />
+    </LinearLayout>
+
+    <Switch
+        android:id="@+id/shouldVibrate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/io_input_vibrate_option_label"
+        android:trackTint="@color/yellow"
+        tools:checked="true" />
+
+    <Switch
+        android:id="@+id/tryAudioPulseMethod"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/io_audio_pulse_method_label"
+        android:trackTint="@color/yellow"
+        tools:checked="true" />
+
+    <Button
+        android:id="@+id/saveConfigButton"
+        style="@style/appButtons"
+        android:drawableStart="@drawable/ic_done"
+        android:text="@string/input_config_save_button_label" />
+
+</LinearLayout>

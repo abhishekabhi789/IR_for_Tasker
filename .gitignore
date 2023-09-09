@@ -1,0 +1,60 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+/app/release/
+# Android Studio/IntelliJ IDEA project files
+.idea/
+*.ipr
+*.iws
+
+# Gradle build files and directories
+/build/
+/.gradle/
+/gradle/
+/gradlew
+/gradlew.bat
+
+
+# Generated APK files
+*.apk
+
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# User-specific files
+*.idea/workspace.xml
+*.idea/vcs.xml
+*.idea/caches/
+*.idea/modules.xml
+*.idea/navEditor.xml
+
+# Generated resource files
+*/build/
+
+# Miscellaneous
+/.idea/libraries/
+*.iml~
+*.swp
+*.jar
+*.zip
+*.rar
+*.gz
+*.tar
+*.tar.gz
+*.bak
+*.tmp
+*.patch
+/app/personal/release/output-metadata.json
+/app/production/release/app-production-release.aab
+/app/production/release/output-metadata.json
+/app/debug/output-metadata.json
