@@ -20,7 +20,7 @@ fun String.toToast(context: Context) {
 
 fun Activity.showAlertDialog(
     title: String,
-    options: List<String>,
+    items: List<String>,
     callback: (String?) -> Unit
 ) {
     AlertDialog.Builder(this).apply {
@@ -30,7 +30,7 @@ fun Activity.showAlertDialog(
             this@showAlertDialog,
             android.R.layout.select_dialog_singlechoice
         ).apply {
-            addAll(options)
+            addAll(items)
         }
         setAdapter(arrayAdapter) { _, which -> callback(arrayAdapter.getItem(which)) }
         setNegativeButton(getString(android.R.string.cancel)) { dialog, _ ->
@@ -42,35 +42,35 @@ fun Activity.showAlertDialog(
 }
 
 fun isValidInputConfigs(context: Context, codeInput: String): Boolean {
-    val TAG = "isValidConfig"
+    val TAG = "util.isValidInputConfig"
     if (codeInput.isEmpty()) {
         context.getString(R.string.error_empty_input).toToast(context)
-        Log.d(TAG, "isValidInputConfigs: empty input")
+        Log.d(TAG, "empty input")
         return false
     } else {
         val prepareCode = PrepareCode(codeInput)
         when (val inputType = prepareCode.getInputType()) {
             CodeType.EMPTY_VARIABLE -> {
                 context.getString(R.string.input_type_saved, inputType.name).toToast(context)
-                Log.d(TAG, "isValidInputConfigs: empty variable")
+                Log.d(TAG, "empty variable")
                 return true
             }
 
             CodeType.HEX, CodeType.RAW -> {
                 return if (prepareCode.isValidInput()) {
                     context.getString(R.string.input_type_saved, inputType.name).toToast(context)
-                    Log.d(TAG, "isValidInputConfigs: valid ${inputType.name}")
+                    Log.d(TAG, "valid ${inputType.name}")
                     true
                 } else {
                     context.getString(R.string.error_input_is_invalid).toToast(context)
-                    Log.d(TAG, "isValidInputConfigs: blocking invalid input: $codeInput")
+                    Log.d(TAG, "blocking invalid input: $codeInput")
                     false
                 }
             }
 
             else -> {
                 context.getString(R.string.invalid_input_ask_to_choose_valid_code).toToast(context)
-                Log.d(TAG, "isValidInputConfigs: Invalid input: $codeInput")
+                Log.d(TAG, "invalid input: $codeInput")
                 return false
             }
         }
@@ -101,9 +101,4 @@ fun saveInput(activity: Activity, taskerHelper: TransmitIrHelper) {
     if (isValid && taskerHelper.onBackPressed().success) {
         taskerHelper.finishForTasker()
     }
-}
-
-/**Input value types*/
-enum class CodeType {
-    HEX, RAW, EMPTY_VARIABLE, ERROR;
 }

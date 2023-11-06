@@ -19,6 +19,7 @@ class TransmitAsAudioPulse(private var frequency: Int, private var pattern: IntA
     private var duration: Float
     private var period: Float = 1f / frequency
     private val TAG = javaClass.simpleName
+    private val SAMPLE_RATE_IN_HERTZ = 44100
 
     init {
         Log.d(TAG, "pattern:" + pattern.joinToString(","))
@@ -31,10 +32,10 @@ class TransmitAsAudioPulse(private var frequency: Int, private var pattern: IntA
         val handler = Handler(Looper.getMainLooper())
         val r = Runnable {
             //preparing samples
-            var count = (44100.0 * 2.0 * duration).toInt()
+            var count = (SAMPLE_RATE_IN_HERTZ * 2 * duration).toInt()
             Log.d(TAG, "transmit: count: $count")
             val minBufferSize = AudioTrack.getMinBufferSize(
-                44100, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT
+                SAMPLE_RATE_IN_HERTZ, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT
             )
             val bufferSizeInBytes = count * (Short.SIZE_BYTES)
             if (bufferSizeInBytes < minBufferSize) {
@@ -45,7 +46,7 @@ class TransmitAsAudioPulse(private var frequency: Int, private var pattern: IntA
                 val requiredIncreaseInCount = (minBufferSize - bufferSizeInBytes) / Short.SIZE_BYTES
                 count += requiredIncreaseInCount
                 val requiredIncreaseInPulse =
-                    ceil(requiredIncreaseInCount / (44100 * 2 * period)).toInt()
+                    ceil(requiredIncreaseInCount / (SAMPLE_RATE_IN_HERTZ * 2 * period)).toInt()
                 pattern[pattern.size - 1] += requiredIncreaseInPulse
                 Log.d(TAG,
                     buildString {
@@ -76,7 +77,8 @@ class TransmitAsAudioPulse(private var frequency: Int, private var pattern: IntA
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()
 
             val audioFormat = AudioFormat.Builder().setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
-                .setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(44100).build()
+                .setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(SAMPLE_RATE_IN_HERTZ)
+                .build()
 
             val track = AudioTrack.Builder().setAudioAttributes(audioAttributes)
                 .setAudioFormat(audioFormat)
@@ -108,11 +110,13 @@ class TransmitAsAudioPulse(private var frequency: Int, private var pattern: IntA
                         track.play()
                         track.write(samples, 0, count)
                     }
-                    //re enable bt headset
-                    am.isBluetoothScoOn = true
-                    Log.d(TAG, "transmit: Finished")
+
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to play: ${e.message}".trimIndent())
+                } finally {
+                    //re enable bt headset
+                    am.isBluetoothScoOn = true
+                    Log.d(TAG, "transmit: finished")
                 }
             } catch (e: NullPointerException) {
                 Log.e(TAG, "NullPointerException in playing: +${e.message}".trimIndent())
@@ -122,19 +126,21 @@ class TransmitAsAudioPulse(private var frequency: Int, private var pattern: IntA
                 e.printStackTrace()
             } catch (e: Exception) {
                 Log.e(TAG, "Other exception: ${e.message}".trimIndent())
+            } finally {
+                track.flush()
             }
-            track.flush()
         }
         handler.post(r)
     }
 
     //source: https://gist.github.com/slightfoot/6330866
     private fun generateTones(duration: Float): ShortArray {
-        val count = (44100.0 * 2.0 * duration).toInt() and 1.inv()
+        val count = (SAMPLE_RATE_IN_HERTZ * 2.0 * duration).toInt() and 1.inv()
         val samples = ShortArray(count)
         var i = 0
         while (i < count) {
-            val sample = (sin(Math.PI * i / (44100.0 / frequency)) * 0x7FFF).toInt().toShort()
+            val sample =
+                (sin(Math.PI * i / (SAMPLE_RATE_IN_HERTZ / frequency)) * 0x7FFF).toInt().toShort()
             samples[i] = sample
             samples[i + 1] = (-1 * sample).toShort()
             i += 2
@@ -143,7 +149,7 @@ class TransmitAsAudioPulse(private var frequency: Int, private var pattern: IntA
     }
 
     private fun generateSilence(duration: Float): ShortArray {
-        val count = (44100.0 * 2.0 * duration).toInt() and 1.inv()
+        val count = (SAMPLE_RATE_IN_HERTZ * 2.0 * duration).toInt() and 1.inv()
         val samples = ShortArray(count)
         var i = 0
         while (i < count) {

@@ -47,10 +47,12 @@ class PrepareCode(private val input: String) {
         return if (::errorDetails.isInitialized) {
             errorDetails
         } else {
-            if (getType(input) == CodeType.EMPTY_VARIABLE) {
-                return Pair(1, "variable value unset $input")
-            } else
-                Pair(2, "unknown input error - $input")
+            val error: ErrorCodes = if (getType(input) == CodeType.EMPTY_VARIABLE) {
+                ErrorCodes.EMPTY_INPUT
+            } else {
+                ErrorCodes.ERROR
+            }
+            Pair(error.code, error.message + input)
         }
     }
 
@@ -103,10 +105,17 @@ class PrepareCode(private val input: String) {
         val lenCalculated =
             preamble.size + ((preamble[2].toInt(16) * 2) + (preamble[3].toInt(16)) * 2)
         val isLenValid = lenCalculated == lenActual //total size = preamble + lenBPS1 + lenBPS2
-        if (!isFrequencyValid) errorDetails = Pair(3, "invalid frequency, $frequency")
-        if (!isLenValid) errorDetails = Pair(
-            4, "invalid length, calculated length - $lenCalculated | actual length = $lenActual"
-        )
+        if (!isFrequencyValid) {
+            val error = ErrorCodes.INVALID_FREQUENCY
+            errorDetails = Pair(error.code, "${error.message}: $frequency")
+        }
+        if (!isLenValid) {
+            val error = ErrorCodes.INVALID_LENGTH
+            errorDetails = Pair(
+                error.code,
+                "${error.message}: calculated length - $lenCalculated | actual length = $lenActual"
+            )
+        }
         return isFrequencyValid && isLenValid
     }
 
@@ -116,7 +125,8 @@ class PrepareCode(private val input: String) {
         val frequency = code.getFrequency()
         val isFrequencyValid = frequency in (30_000..60_000)
         if (!isFrequencyValid) {
-            errorDetails = Pair(3, "invalid frequency, $frequency")
+            val error = ErrorCodes.INVALID_FREQUENCY
+            errorDetails = Pair(error.code, "${error.message}: $frequency")
         }
         //pattern = code.getPattern()
         return isFrequencyValid
@@ -132,6 +142,13 @@ class PrepareCode(private val input: String) {
         try {
             return when {
                 !hasEmitter && tryAudioPulseMethod -> {
+                    val isOnWiredHeadset = AudioUtils.isOnWiredHeadset(context)
+                    if (!isOnWiredHeadset) {
+                        Log.e(TAG, "transmitIr: no audio ir blaster")
+                        val error = ErrorCodes.NO_WIRED_HEADPHONE_CONNECTED
+                        errorDetails = Pair(error.code, error.message)
+                        return false
+                    }
                     TransmitAsAudioPulse(frequency, pattern).transmit(context)
                     true
                 }
@@ -142,8 +159,9 @@ class PrepareCode(private val input: String) {
                 }
 
                 else -> {
-                    Log.d(TAG, "transmitIr: No built-in IR emitter, fallback not permitted")
-                    errorDetails = Pair(5, "No built-in IR emitter, fallback not permitted")
+                    val error = ErrorCodes.NO_BUILTIN_IR_BLASTER
+                    Log.d(TAG, "transmitIr: ${error.message}")
+                    errorDetails = Pair(error.code, error.message)
                     false
                 }
             }
@@ -151,7 +169,8 @@ class PrepareCode(private val input: String) {
         } catch (e: Error) {
             Log.e(TAG, "transmitIr: Exception!\n" + e.message)
         }
-        errorDetails = Pair(6, "error transmitting code")
+        val error = ErrorCodes.UNKNOWN_ERROR_DURING_TRANSMISSION
+        errorDetails = Pair(error.code, error.message)
         return false
     }
 }
