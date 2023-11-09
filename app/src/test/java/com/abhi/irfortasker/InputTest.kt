@@ -49,7 +49,7 @@ class PrepareCodeTest {
         assertEquals(
             Pair(
                 4,
-                "invalid length, calculated length - 14 | actual length = 20"
+                "invalid code length calculated: calculated length - 14 | actual length = 20"
             ), prepareCode.getErrorDetails()
         )
     }

@@ -135,12 +135,13 @@ class TransmitAsAudioPulse(private var frequency: Int, private var pattern: IntA
 
     //source: https://gist.github.com/slightfoot/6330866
     private fun generateTones(duration: Float): ShortArray {
-        val count = (SAMPLE_RATE_IN_HERTZ * 2.0 * duration).toInt() and 1.inv()
+        val count = (SAMPLE_RATE_IN_HERTZ.toFloat() * 2.0 * duration).toInt() and 1.inv()
         val samples = ShortArray(count)
         var i = 0
         while (i < count) {
             val sample =
-                (sin(Math.PI * i / (SAMPLE_RATE_IN_HERTZ / frequency)) * 0x7FFF).toInt().toShort()
+                (sin(Math.PI * i / (SAMPLE_RATE_IN_HERTZ.toFloat() / frequency)) * 0x7FFF).toInt()
+                    .toShort()
             samples[i] = sample
             samples[i + 1] = (-1 * sample).toShort()
             i += 2
@@ -149,7 +150,7 @@ class TransmitAsAudioPulse(private var frequency: Int, private var pattern: IntA
     }
 
     private fun generateSilence(duration: Float): ShortArray {
-        val count = (SAMPLE_RATE_IN_HERTZ * 2.0 * duration).toInt() and 1.inv()
+        val count = (SAMPLE_RATE_IN_HERTZ.toFloat() * 2.0 * duration).toInt() and 1.inv()
         val samples = ShortArray(count)
         var i = 0
         while (i < count) {
