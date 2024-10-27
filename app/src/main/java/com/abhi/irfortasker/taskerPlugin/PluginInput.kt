@@ -5,7 +5,7 @@ import com.joaomgcd.taskerpluginlibrary.input.TaskerInputField
 import com.joaomgcd.taskerpluginlibrary.input.TaskerInputRoot
 
 @TaskerInputRoot
-class TransmitIrInput @JvmOverloads constructor(
+class PluginInput @JvmOverloads constructor(
     @field:TaskerInputField("inputCode", R.string.io_input_code_variable_label)
     var inputCode: String? = null,
     @field:TaskerInputField("shouldVibrate", R.string.io_input_vibrate_option_label)

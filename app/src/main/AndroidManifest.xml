@@ -18,7 +18,7 @@
         android:theme="@style/AppTheme"
         tools:targetApi="33">
         <activity
-            android:name=".taskerPlugin.ActivityConfigTransmitIr"
+            android:name=".taskerPlugin.PluginConfigActivity"
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
             android:label="Transmit IR">
