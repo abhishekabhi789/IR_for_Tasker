@@ -7,8 +7,6 @@ import net.dinglisch.android.tasker.TaskerPlugin.variableNameValid
 import java.util.Collections.frequency
 
 
-/**
- * Process the input and provides the methods [getInputType], [isValidInput], [isValidCode], [getErrorDetails]  and [transmitCode].*/
 class IrCodeHelper {
     private var inputCode: String? = null
 
@@ -16,7 +14,7 @@ class IrCodeHelper {
     var errorDetails: Pair<Int, String>? = null
 
     /** First call this method to update the input code
-     * @param irCode the input code from config UI or tasker runner*/
+     * @param codeInput the input code from config UI or tasker runner*/
     fun updateInputCode(codeInput: String) {
         Log.i(TAG, "updateInputCode: setting input $codeInput")
         inputCode = codeInput
@@ -128,17 +126,18 @@ class IrCodeHelper {
     ): Boolean {
         val irManager = context.getSystemService(Context.CONSUMER_IR_SERVICE) as? ConsumerIrManager
         val hasEmitter = irManager?.hasIrEmitter() ?: false
-        Log.i(TAG, "transmitIr: hasEmitter $hasEmitter")
+        Log.d(TAG, "performTransmission:  $frequency ${pattern.joinToString(separator = ",")}")
+        Log.i(TAG, "performTransmission: hasEmitter $hasEmitter")
         return try {
             when {
                 !hasEmitter && transmitAsAudioPulses -> {
                     val isOnWiredHeadset = AudioUtils.isOnWiredHeadset(context)
                     if (!isOnWiredHeadset) {
-                        Log.e(TAG, "isFrequencyValid: no audio ir blaster")
+                        Log.e(TAG, "performTransmission: no audio ir blaster")
                         updateError(ErrorCodes.NO_WIRED_HEADPHONE_CONNECTED)
                         return false
                     }
-                    TransmitAsAudioPulse(frequency, pattern).transmit(context)
+                    TransmitAsAudioPulse.transmit(context, frequency, pattern)
                     true
                 }
 
@@ -154,15 +153,18 @@ class IrCodeHelper {
             }
 
         } catch (e: Error) {
-            Log.e(TAG, "transmitIr: Failed to transmit!", e)
+            Log.e(TAG, "performTransmission: Failed to transmit!", e)
             updateError(ErrorCodes.UNKNOWN_ERROR_DURING_TRANSMISSION)
             false
         }
     }
 
-    private fun updateError(error: ErrorCodes, message: String? = null) {
-        Log.e(TAG, "updateError: error reported $error $message")
-        errorDetails = error.let { it.code to it.message + " $message" }
+    private fun updateError(errorCode: ErrorCodes, message: String? = null) {
+        Log.e(TAG, "updateError: error reported $errorCode $message")
+        errorDetails =
+            errorCode.let { error ->
+                error.code to error.message + (message?.let { "\n$it" } ?: "")
+            }
     }
 
     companion object {

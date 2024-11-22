@@ -8,9 +8,7 @@ class ProcessRawCode(inputCode: String) {
     init {
         val dataArr = inputCode.replace(" ", "").split(",").toMutableList()
         frequency = dataArr[0].toInt()
-        pattern =
-            dataArr.subList(1, dataArr.size).map { ((it.toLong() * frequency) / 1_000_000).toInt() }
-                .toIntArray()
+        pattern = dataArr.subList(1, dataArr.size).map { it.toInt() }.toIntArray()
     }
 
     fun getFrequency(): Int {
