@@ -13,21 +13,30 @@ import com.joaomgcd.taskerpluginlibrary.input.TaskerInput
 import com.joaomgcd.taskerpluginlibrary.runner.TaskerPluginResult
 import com.joaomgcd.taskerpluginlibrary.runner.TaskerPluginResultErrorWithOutput
 import com.joaomgcd.taskerpluginlibrary.runner.TaskerPluginResultSucess
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
+
 
 class PluginRunner : TaskerPluginRunnerAction<PluginInput, Unit>() {
-    private val TAG = javaClass.simpleName
-    private val irCodeHelper = IrCodeHelper()
+
     override fun run(
         context: Context, input: TaskerInput<PluginInput>
     ): TaskerPluginResult<Unit> {
+        val irCodeHelper = IrCodeHelper(context)
         val inputCode = input.regular.inputCode.toString()
         val shouldVibrate = input.regular.shouldVibrate
-        val tryAudioPulseMethod = input.regular.tryAudioPulseMethod
+        val chosenTransmissionMethod =
+            input.regular.transmissionMethod ?: TransmissionMethod.DeviceIrBlaster.name
+        val transmissionMethod = TransmissionMethod.valueOf(chosenTransmissionMethod)
         irCodeHelper.updateInputCode(inputCode)
         return if (irCodeHelper.isCodeValidToTransmit()) {
             try {
                 vibrate(context, 50, shouldVibrate)
-                val isSuccess = irCodeHelper.transmitCode(context, tryAudioPulseMethod)
+                val isSuccess = runBlocking {
+                    withTimeoutOrNull(requestedTimeout?.toLong() ?: DEFAULT_TIMEOUT_MS) {
+                        irCodeHelper.transmitCode(context, transmissionMethod)
+                    } ?: false
+                }
                 Log.i(TAG, "run: transmission success $isSuccess")
                 if (isSuccess) {
                     TaskerPluginResultSucess()
@@ -64,5 +73,10 @@ class PluginRunner : TaskerPluginRunnerAction<PluginInput, Unit>() {
                 vibrate(duration)
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "PluginRunner"
+        private const val DEFAULT_TIMEOUT_MS: Long = 10_000L
     }
 }

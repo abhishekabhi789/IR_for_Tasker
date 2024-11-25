@@ -40,6 +40,9 @@ android {
             outputFileName = "${appName}_v${versionName}.apk"
         }
     }
+    viewBinding {
+        enabled = true
+    }
 }
 
 dependencies {

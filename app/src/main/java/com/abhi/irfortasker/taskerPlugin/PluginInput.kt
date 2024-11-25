@@ -1,15 +1,17 @@
 package com.abhi.irfortasker.taskerPlugin
 
+import android.annotation.SuppressLint
 import com.abhi.irfortasker.R
 import com.joaomgcd.taskerpluginlibrary.input.TaskerInputField
 import com.joaomgcd.taskerpluginlibrary.input.TaskerInputRoot
 
+@SuppressLint("NonConstantResourceId")
 @TaskerInputRoot
 class PluginInput @JvmOverloads constructor(
-    @field:TaskerInputField("inputCode", R.string.io_input_code_variable_label)
+    @field:TaskerInputField("inputCode", R.string.input_code_variable_label)
     var inputCode: String? = null,
-    @field:TaskerInputField("shouldVibrate", R.string.io_input_vibrate_option_label)
+    @field:TaskerInputField("shouldVibrate", R.string.input_vibrate_option_label)
     var shouldVibrate: Boolean = true, //default
-    @field:TaskerInputField("tryAudioPulseMethod", R.string.io_audio_pulse_method_label)
-    var tryAudioPulseMethod: Boolean = false //default
+    @field:TaskerInputField("transmissionMethod", R.string.input_transmission_method)
+    var transmissionMethod: String? = null, //let the hardware decide default
 )

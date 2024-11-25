@@ -2,14 +2,18 @@
 <resources>
     <string name="app_name">IR for Tasker</string>
     <!--    input class-->
-    <string name="io_input_code_variable_label">Input</string>
-    <string name="io_input_vibrate_option_label">Vibrate when transmitting</string>
-    <string name="io_audio_pulse_method_label">Fallback to audio transmission method</string>
+    <string name="input_code_variable_label">Input</string>
+    <string name="input_vibrate_option_label">Vibrate when transmitting</string>
+    <string name="input_transmission_method">Transmission method</string>
     <!--    input config ui-->
+    <string name="input_code_field_hint">Enter ProntoHEX or Raw pulse code to transmit</string>
+    <string name="input_variable_import_button_label">Import relevant variables from Tasker</string>
+    <string name="input_variable_import_dialog_title">Choose the variable containing IR signal</string>
+    <string name="select_transmission_method">Select Transmission Method</string>
+    <string name="device_irblaster_method">Device IR Blaster</string>
+    <string name="audio_pulse_output_method">Audio Jack IR Blaster</string>
     <string name="input_vibration_toggle_label">Vibrate when transmitting</string>
     <string name="input_config_save_button_label">Save</string>
-    <string name="input_variable_import_button_label">Import relevant variables from Tasker</string>
-    <string name="input_code_field_hint">Enter ProntoHEX or Raw pulse code to transmit</string>
     <!--    Configuration class-->
     <string name="error_empty_input">Error: Input can\'t be empty!</string>
     <string name="error_input_is_invalid">Error: Input is invalid!</string>

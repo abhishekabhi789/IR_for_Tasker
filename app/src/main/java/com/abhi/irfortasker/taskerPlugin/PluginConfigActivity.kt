@@ -9,14 +9,13 @@ import android.os.Looper
 import android.util.Log
 import android.view.KeyEvent
 import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ImageButton
-import android.widget.Switch
 import android.widget.Toast
 import com.abhi.irfortasker.CodeType
 import com.abhi.irfortasker.IrCodeHelper
 import com.abhi.irfortasker.R
+import com.abhi.irfortasker.databinding.PluginconfiglayoutBinding
+import com.abhi.irfortasker.taskerPlugin.TransmissionMethod.AudioPulse
+import com.abhi.irfortasker.taskerPlugin.TransmissionMethod.DeviceIrBlaster
 import com.joaomgcd.taskerpluginlibrary.config.TaskerPluginConfig
 import com.joaomgcd.taskerpluginlibrary.input.TaskerInput
 
@@ -24,35 +23,57 @@ import com.joaomgcd.taskerpluginlibrary.input.TaskerInput
  * Activity class that handles plugin configuration from tasker.
  * */
 class PluginConfigActivity : Activity(), TaskerPluginConfig<PluginInput> {
-    private val irCodeHelper = IrCodeHelper()
+    private lateinit var binding: PluginconfiglayoutBinding
+    private lateinit var irCodeHelper: IrCodeHelper
     override val context: Context get() = applicationContext
-    override val inputForTasker
-        get() = TaskerInput(
-            PluginInput(
-                findViewById<EditText>(R.id.codeInputField).text?.toString(),
-                findViewById<Switch>(R.id.shouldVibrate).isChecked,
-                findViewById<Switch>(R.id.tryAudioPulseMethod).isChecked
+    override val inputForTasker: TaskerInput<PluginInput>
+        get() {
+            val selectedMethod =
+                when (binding.transmissionMethodGroup.checkedRadioButtonId) {
+                    R.id.deviceIrBlasterMethod -> DeviceIrBlaster.name
+                    R.id.audioPulseMethod -> AudioPulse.name
+                    else -> getSuggestedTransmissionMode().name
+                }
+            return TaskerInput(
+                PluginInput(
+                    binding.codeInputField.text?.toString(),
+                    binding.shouldVibrate.isChecked,
+                    selectedMethod
+                )
             )
-        )
+        }
 
     override fun assignFromInput(input: TaskerInput<PluginInput>) = input.regular.run {
-        findViewById<EditText>(R.id.codeInputField).setText(inputCode)
-        findViewById<Switch>(R.id.shouldVibrate).isChecked = input.regular.shouldVibrate
-        findViewById<Switch>(R.id.tryAudioPulseMethod).isChecked = input.regular.tryAudioPulseMethod
+        binding.codeInputField.setText(inputCode)
+        binding.shouldVibrate.isChecked = input.regular.shouldVibrate
+        binding.transmissionMethodGroup.let { methodGroup ->
+            when (transmissionMethod) {
+                DeviceIrBlaster.name -> methodGroup.check(R.id.deviceIrBlasterMethod)
+                AudioPulse.name -> methodGroup.check(R.id.audioPulseMethod)
+                else -> {
+                    when (getSuggestedTransmissionMode()) {
+                        DeviceIrBlaster -> binding.deviceIrBlasterMethod.isChecked = true
+                        AudioPulse -> binding.audioPulseMethod.isChecked = true
+                    }
+                }
+            }
+        }
     }
 
     private val taskerHelper by lazy { PluginHelper(this) }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.pluginconfiglayout)
+        irCodeHelper = IrCodeHelper(this@PluginConfigActivity)
+        binding = PluginconfiglayoutBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         taskerHelper.onCreate()
-        findViewById<ImageButton>(R.id.variableButton).setOnClickListener {
+        binding.variableButton.setOnClickListener {
             showVariableChooseDialog(taskerHelper) { chosenVariable ->
                 Log.i(TAG, "onCreate: chosen variable - $chosenVariable")
-                findViewById<EditText>(R.id.codeInputField).setText(chosenVariable)
+                binding.codeInputField.setText(chosenVariable)
             }
         }
-        findViewById<Button>(R.id.saveConfigButton).setOnClickListener {
+        binding.saveConfigButton.setOnClickListener {
             saveInput(taskerHelper)
         }
     }
@@ -65,7 +86,7 @@ class PluginConfigActivity : Activity(), TaskerPluginConfig<PluginInput> {
     }
 
     private fun saveInput(taskerHelper: PluginHelper) {
-        val codeInput = findViewById<EditText>(R.id.codeInputField).text.toString()
+        val codeInput = binding.codeInputField.text.toString()
         val isValid = isValidInputConfigs(codeInput)
         if (isValid) taskerHelper.finishForTasker()
     }
@@ -117,8 +138,8 @@ class PluginConfigActivity : Activity(), TaskerPluginConfig<PluginInput> {
         val arrayAdapter = ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice)
         arrayAdapter.addAll(relevantVariables)
         AlertDialog.Builder(this).apply {
-            setIcon(R.mipmap.ic_launcher)
-            setTitle(title)
+            setIcon(R.drawable.ic_tasker_variable)
+            setTitle(R.string.input_variable_import_dialog_title)
             setAdapter(arrayAdapter) { _, itemPosition ->
                 onSelected(arrayAdapter.getItem(itemPosition))
             }
@@ -133,6 +154,11 @@ class PluginConfigActivity : Activity(), TaskerPluginConfig<PluginInput> {
         Handler(Looper.getMainLooper()).post {
             Toast.makeText(context, this, Toast.LENGTH_LONG).show()
         }
+    }
+
+    /** Suggestion based on hardware capability*/
+    private fun getSuggestedTransmissionMode(): TransmissionMethod {
+        return if (irCodeHelper.hasDeviceEmitter()) DeviceIrBlaster else AudioPulse
     }
 
     companion object {

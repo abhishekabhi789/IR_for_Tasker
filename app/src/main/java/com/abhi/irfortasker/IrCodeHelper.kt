@@ -1,13 +1,16 @@
 package com.abhi.irfortasker
 
 import android.content.Context
-import android.hardware.ConsumerIrManager
 import android.util.Log
+import com.abhi.irfortasker.taskerPlugin.TransmissionMethod
 import net.dinglisch.android.tasker.TaskerPlugin.variableNameValid
 import java.util.Collections.frequency
 
 
-class IrCodeHelper {
+class IrCodeHelper(context: Context) {
+
+    private val deviceIrHelper = DeviceIrHelper(context)
+
     private var inputCode: String? = null
 
     /** Stores error code and message for Tasker if an action fails. */
@@ -16,7 +19,6 @@ class IrCodeHelper {
     /** First call this method to update the input code
      * @param codeInput the input code from config UI or tasker runner*/
     fun updateInputCode(codeInput: String) {
-        Log.i(TAG, "updateInputCode: setting input $codeInput")
         inputCode = codeInput
     }
 
@@ -48,14 +50,14 @@ class IrCodeHelper {
      * @param transmitAsAudioPulses if set true, in the absence of IR blaster, the code will be
      * transmitted as audio pulses through audio stream.
      */
-    fun transmitCode(context: Context, transmitAsAudioPulses: Boolean): Boolean {
+    suspend fun transmitCode(context: Context, transmissionMethod: TransmissionMethod): Boolean {
         return inputCode?.let { input ->
             val (frequency, pattern) = when (parseCodeType()) {
                 CodeType.HEX -> ProcessHexCode(input).run { getFrequency() to getPattern() }
                 CodeType.RAW -> ProcessRawCode(input).run { getFrequency() to getPattern() }
                 else -> return false
             }
-            return performTransmission(context, transmitAsAudioPulses, frequency, pattern)
+            return performTransmission(context, transmissionMethod, frequency, pattern)
         } ?: false
     }
 
@@ -120,17 +122,27 @@ class IrCodeHelper {
         return frequency in (30_000..60_000)
     }
 
+    fun hasDeviceEmitter() = deviceIrHelper.hasIrEmitter()
+
     /**The function will check hardware and calls appropriate method.*/
-    private fun performTransmission(
-        context: Context, transmitAsAudioPulses: Boolean, frequency: Int, pattern: IntArray
+    private suspend fun performTransmission(
+        context: Context, transmissionMethod: TransmissionMethod, frequency: Int, pattern: IntArray
     ): Boolean {
-        val irManager = context.getSystemService(Context.CONSUMER_IR_SERVICE) as? ConsumerIrManager
-        val hasEmitter = irManager?.hasIrEmitter() ?: false
+        val hasEmitter = hasDeviceEmitter()
         Log.d(TAG, "performTransmission:  $frequency ${pattern.joinToString(separator = ",")}")
         Log.i(TAG, "performTransmission: hasEmitter $hasEmitter")
-        return try {
-            when {
-                !hasEmitter && transmitAsAudioPulses -> {
+        try {
+            when (transmissionMethod) {
+                TransmissionMethod.DeviceIrBlaster -> {
+                    if (!hasEmitter) {
+                        updateError(ErrorCodes.NO_BUILTIN_IR_BLASTER)
+                        return false
+                    }
+                    deviceIrHelper.transmit(frequency, pattern)
+                    return true
+                }
+
+                TransmissionMethod.AudioPulse -> {
                     val isOnWiredHeadset = AudioUtils.isOnWiredHeadset(context)
                     if (!isOnWiredHeadset) {
                         Log.e(TAG, "performTransmission: no audio ir blaster")
@@ -138,24 +150,14 @@ class IrCodeHelper {
                         return false
                     }
                     TransmitAsAudioPulse.transmit(context, frequency, pattern)
-                    true
-                }
-
-                hasEmitter -> {
-                    irManager?.transmit(frequency, pattern)
-                    true
-                }
-
-                else -> {
-                    updateError(ErrorCodes.NO_BUILTIN_IR_BLASTER)
-                    false
+                    return true
                 }
             }
 
         } catch (e: Error) {
             Log.e(TAG, "performTransmission: Failed to transmit!", e)
             updateError(ErrorCodes.UNKNOWN_ERROR_DURING_TRANSMISSION)
-            false
+            return false
         }
     }
 
