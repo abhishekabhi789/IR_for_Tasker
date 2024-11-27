@@ -10,7 +10,7 @@ import java.util.Collections.frequency
 class IrCodeHelper(context: Context) {
 
     private val deviceIrHelper = DeviceIrHelper(context)
-
+    private val audioOutputHelper = AudioOutputHelper(context)
     private var inputCode: String? = null
 
     /** Stores error code and message for Tasker if an action fails. */
@@ -46,18 +46,15 @@ class IrCodeHelper(context: Context) {
         } ?: false
     }
 
-    /** Transmits the processed IR code.
-     * @param transmitAsAudioPulses if set true, in the absence of IR blaster, the code will be
-     * transmitted as audio pulses through audio stream.
-     */
-    suspend fun transmitCode(context: Context, transmissionMethod: TransmissionMethod): Boolean {
+    /** Transmits the processed IR code.*/
+    suspend fun transmitCode(transmissionMethod: TransmissionMethod): Boolean {
         return inputCode?.let { input ->
             val (frequency, pattern) = when (parseCodeType()) {
                 CodeType.HEX -> ProcessHexCode(input).run { getFrequency() to getPattern() }
                 CodeType.RAW -> ProcessRawCode(input).run { getFrequency() to getPattern() }
                 else -> return false
             }
-            return performTransmission(context, transmissionMethod, frequency, pattern)
+            return performTransmission(transmissionMethod, frequency, pattern)
         } ?: false
     }
 
@@ -79,7 +76,7 @@ class IrCodeHelper(context: Context) {
         hex.trim().split("\\s+".toRegex()).take(4)
 
     /**Hex code contains a preamble and one or two burst pair sequences(BPS).
-     *  Frequency is validated by checking its range, code length is calculated from preamble([getPreamble]) and compared with actual size.*/
+     *  Frequency is validated by checking its range, code length is calculated from preamble([extractPreamble]) and compared with actual size.*/
     private fun isValidHexCode(): Boolean {
         return inputCode?.let { hexCode ->
             val preamble = extractPreamble(hexCode)
@@ -126,7 +123,9 @@ class IrCodeHelper(context: Context) {
 
     /**The function will check hardware and calls appropriate method.*/
     private suspend fun performTransmission(
-        context: Context, transmissionMethod: TransmissionMethod, frequency: Int, pattern: IntArray
+        transmissionMethod: TransmissionMethod,
+        frequency: Int,
+        pattern: IntArray
     ): Boolean {
         val hasEmitter = hasDeviceEmitter()
         Log.d(TAG, "performTransmission:  $frequency ${pattern.joinToString(separator = ",")}")
@@ -143,13 +142,13 @@ class IrCodeHelper(context: Context) {
                 }
 
                 TransmissionMethod.AudioPulse -> {
-                    val isOnWiredHeadset = AudioUtils.isOnWiredHeadset(context)
-                    if (!isOnWiredHeadset) {
+                    if (!audioOutputHelper.isOnWiredHeadphone()) {
                         Log.e(TAG, "performTransmission: no audio ir blaster")
                         updateError(ErrorCodes.NO_WIRED_HEADPHONE_CONNECTED)
                         return false
                     }
-                    TransmitAsAudioPulse.transmit(context, frequency, pattern)
+                    audioOutputHelper.prepareAudioOutput()
+                    TransmitAsAudioPulse.transmit(frequency, pattern)
                     return true
                 }
             }
@@ -158,6 +157,8 @@ class IrCodeHelper(context: Context) {
             Log.e(TAG, "performTransmission: Failed to transmit!", e)
             updateError(ErrorCodes.UNKNOWN_ERROR_DURING_TRANSMISSION)
             return false
+        } finally {
+            audioOutputHelper.cleanupAudioOutput()
         }
     }
 

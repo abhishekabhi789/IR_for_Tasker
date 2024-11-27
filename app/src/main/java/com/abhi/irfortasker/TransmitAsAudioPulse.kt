@@ -1,9 +1,7 @@
 package com.abhi.irfortasker
 
-import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFormat
-import android.media.AudioManager
 import android.media.AudioTrack
 import android.util.Log
 import com.abhi.irfortasker.TransmitAsAudioPulse.transmit
@@ -26,7 +24,7 @@ object TransmitAsAudioPulse {
      * @param frequency The IR carrier frequency in Hertz.
      * @param pattern The alternating on/off pattern in microseconds to transmit.
      */
-    suspend fun transmit(context: Context, frequency: Int, pattern: IntArray) {
+    suspend fun transmit(frequency: Int, pattern: IntArray) {
         //based on: https://github.com/g-r-a-v-i-t-y-w-a-v-e/ProntoDroid/blob/master/app/src/main/java/paronomasia/prontodroid/Pronto.java
         Log.i(TAG, "frequency: $frequency,  pattern:${pattern.joinToString(",")}")
         withContext(Dispatchers.IO) {
@@ -79,19 +77,6 @@ object TransmitAsAudioPulse {
                 return@withContext
             }
 
-            val am = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            val originalVolumeLevel = am.getStreamVolume(AudioManager.STREAM_MUSIC)
-            try {
-                am.setStreamVolume(
-                    AudioManager.STREAM_MUSIC,
-                    am.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "transmit: audioManager setStreamVolume failed", e)
-            }
-            am.mode = AudioManager.MODE_NORMAL
-            am.isWiredHeadsetOn = true
-
             try {
                 if (track.state != AudioTrack.STATE_UNINITIALIZED) {
                     track.write(samples, 0, sampleCount)
@@ -105,15 +90,8 @@ object TransmitAsAudioPulse {
                 Log.e(TAG, "Unknown exception", e)
             } finally {
                 Log.i(TAG, "transmit: finished transmission")
-                try {
-                    Log.i(TAG, "transmit: restoring volume level to $originalVolumeLevel")
-                    am.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolumeLevel, 0)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to restore volume: ${e.message}", e)
-                } finally {
-                    track.flush()
-                    track.release()
-                }
+                track.flush()
+                track.release()
             }
         }
     }
@@ -129,11 +107,11 @@ object TransmitAsAudioPulse {
             val count = getCountForDuration(duration)
             ShortArray(count).apply {
                 for (i in indices step 2) {
-                    val short =
+                    val sample =
                         (MAX_AMPLITUDE * sin((i * Math.PI * frequency) / SAMPLE_RATE)).toInt()
                             .toShort()
-                    this[i] = short
-                    this[i + 1] = short.unaryMinus().toShort()
+                    this[i] = sample
+                    this[i + 1] = sample.unaryMinus().toShort()
                 }
             }
         }
