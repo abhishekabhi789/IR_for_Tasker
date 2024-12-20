@@ -147,9 +147,13 @@ class IrCodeHelper(context: Context) {
                         updateError(ErrorCodes.NO_WIRED_HEADPHONE_CONNECTED)
                         return false
                     }
-                    audioOutputHelper.prepareAudioOutput()
-                    TransmitAsAudioPulse.transmit(frequency, pattern)
-                    return true
+                    return if (audioOutputHelper.prepareAudioOutput()) {
+                        TransmitAsAudioPulse.transmit(frequency, pattern)
+                        true
+                    } else {
+                        Log.e(TAG, "performTransmission: failed to prepare audio sink")
+                        false
+                    }
                 }
             }
 

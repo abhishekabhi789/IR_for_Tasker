@@ -10,12 +10,15 @@ An IR signal transmission plugin for Tasker
 ## :satellite: Transmission Method
 
 The app can transmit IR signals through the built-in ir blaster
-or [DIY IR blaster](https://www.instructables.com/How-to-Make-an-IR-Blaster/)
-signal as audio pulses through the 3.5mm jack.
+or [DIY IR blaster](https://www.instructables.com/How-to-Make-an-IR-Blaster/) signal as audio pulses
+through the 3.5mm jack.
 
 > [!IMPORTANT]
 > Check below instructions before using this app.
 
+> [!NOTE]
+> The audio transmission method is experimental and not properly implemented and tested for all
+> devices.
 
 <details><summary>
 
@@ -52,17 +55,17 @@ signal as audio pulses through the 3.5mm jack.
 ## :white_check_mark: Code Verification and Troubleshooting
 
 To prevent possible crashes and provide error reports with Tasker, the app verifies the input every
-time. It is possible for a valid IR code to be rejected as invalid due to a non-tested scenario,
-this occurrence is rare.
+time.It is possible for a valid IR code to be rejected as invalid due to a non-tested scenario,this
+occurrence is rare.
+
 > [!NOTE]  
 > If you found a code is not working with app, try
 > with [Termux-API](https://wiki.termux.com/wiki/Termux-infrared-transmit), if the code is in hex
->
-format,use [this task](https://taskernet.com/shares/?user=AS35m8mVC%2FNlWH31JCTnGHpKVeZk1osEp8V1pFxCq1Ls28Un1RXCw9ZNWWvmpxOebt4WIYFeiZhZKHc%3D&id=Task%3AIR+-+Pronto+Hex+To+Raw+Pulses).
+> format,use [this task](https://taskernet.com/shares/?user=AS35m8mVC%2FNlWH31JCTnGHpKVeZk1osEp8V1pFxCq1Ls28Un1RXCw9ZNWWvmpxOebt4WIYFeiZhZKHc%3D&id=Task%3AIR+-+Pronto+Hex+To+Raw+Pulses).
 
 ## :keyboard: Input Options
 
-Works with:
+Input can be :
 
 1. [ProntoHex code](https://www.etcwiki.org/wiki/Pronto_Infrared_Format)
 

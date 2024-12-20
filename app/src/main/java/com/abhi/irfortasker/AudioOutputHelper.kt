@@ -26,7 +26,7 @@ class AudioOutputHelper(context: Context) {
 
     private fun getHeadsetInfo(): AudioDeviceInfo? {
         am.getDevices(AudioManager.GET_DEVICES_OUTPUTS).filter {
-            it.type in listOf(
+            it.isSink && it.type in listOf(
                 AudioDeviceInfo.TYPE_LINE_ANALOG, // found this one is for a DIY IR blaster
                 AudioDeviceInfo.TYPE_AUX_LINE,
                 AudioDeviceInfo.TYPE_WIRED_HEADSET,
@@ -47,21 +47,23 @@ class AudioOutputHelper(context: Context) {
         return try {
             //selecting output mode
             headsetInfo?.let { headphone ->
-                am.mode = AudioManager.MODE_IN_COMMUNICATION
+//                am.setMode(AudioManager.MODE_IN_COMMUNICATION)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     am.setCommunicationDevice(headphone)
                 } else {
                     am.stopBluetoothSco()
+                    am.setSpeakerphoneOn(false)
+                    am.setWiredHeadsetOn(true)
                     true
                 }
-            } ?: false
+            } ?: true
         } catch (e: Exception) {
             Log.e(TAG, "prepareAudioOutput: failed to select output mode", e)
-            return false
+            false
         } finally {
             // setting volume max
             am.getStreamMaxVolume(TRANSMISSION_STREAM).let { maxVolume ->
-                am.setStreamVolume(TRANSMISSION_STREAM, maxVolume, 0)
+                am.setStreamVolume(TRANSMISSION_STREAM, maxVolume, AudioManager.FLAG_SHOW_UI)
                 Log.d(TAG, "prepareAudioOutput: max volume set to $maxVolume")
             }
         }
@@ -71,11 +73,13 @@ class AudioOutputHelper(context: Context) {
         if (!hasStateChanged) return
         try {
             // resetting audio output
-            am.mode = AudioManager.MODE_NORMAL
+//            am.setMode(AudioManager.MODE_NORMAL)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 am.clearCommunicationDevice()
             } else {
                 am.startBluetoothSco()
+                am.setSpeakerphoneOn(true)
+                am.setWiredHeadsetOn(true)
             }
             Log.i(TAG, "cleanupAudioOutput: completed resetting output")
         } catch (e: Exception) {
