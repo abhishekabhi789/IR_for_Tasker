@@ -11,8 +11,8 @@ android {
         applicationId "com.abhi.irfortasker"
         minSdk 23
         targetSdk 35
-        versionCode 21
-        versionName "0.2.1"
+        versionCode 30
+        versionName "0.3.0"
     }
 
     buildTypes {
