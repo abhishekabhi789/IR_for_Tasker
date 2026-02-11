@@ -3,6 +3,7 @@ package com.abhi.irfortasker
 import android.content.Context
 import android.util.Log
 import com.abhi.irfortasker.taskerPlugin.TransmissionMethod
+import kotlinx.coroutines.runBlocking
 import net.dinglisch.android.tasker.TaskerPlugin.variableNameValid
 import java.util.Collections.frequency
 
@@ -28,7 +29,7 @@ class IrCodeHelper(context: Context) {
     /** Method to verify the input before saving the plugin */
     fun isInputValidToSave(): Boolean {
         return when (parseCodeType()) {
-            CodeType.HEX, CodeType.RAW -> isCodeValidToTransmit()
+            CodeType.HEX, CodeType.RAW, CodeType.NEC -> isCodeValidToTransmit()
             CodeType.EMPTY_VARIABLE -> true
             else -> false
         }
@@ -40,6 +41,7 @@ class IrCodeHelper(context: Context) {
             when (parseCodeType()) {
                 CodeType.HEX -> isValidHexCode()
                 CodeType.RAW -> isValidRawPulseCode()
+                CodeType.NEC -> isValidNecCode()
                 CodeType.EMPTY_VARIABLE -> false.also { updateError(ErrorCodes.EMPTY_INPUT) }
                 else -> false
             }
@@ -47,11 +49,12 @@ class IrCodeHelper(context: Context) {
     }
 
     /** Transmits the processed IR code.*/
-    suspend fun transmitCode(transmissionMethod: TransmissionMethod): Boolean {
+    fun transmitCode(transmissionMethod: TransmissionMethod): Boolean {
         return inputCode?.let { input ->
-            val (frequency, pattern) = when (parseCodeType()) {
+            var (frequency, pattern) = when (parseCodeType()) {
                 CodeType.HEX -> ProcessHexCode(input).run { getFrequency() to getPattern() }
                 CodeType.RAW -> ProcessRawCode(input).run { getFrequency() to getPattern() }
+                CodeType.NEC -> ProcessNecCode(input).run { getFrequency() to getPattern()!! }
                 else -> return false
             }
             return performTransmission(transmissionMethod, frequency, pattern)
@@ -61,6 +64,7 @@ class IrCodeHelper(context: Context) {
     private fun parseCodeType(): CodeType {
         return (inputCode?.let { input ->
             when {
+                necRegex.matches(input) -> CodeType.NEC
                 hexRegex.matches(input) -> CodeType.HEX
                 rawRegex.matches(input) -> CodeType.RAW
                 variableNameValid(input) -> CodeType.EMPTY_VARIABLE
@@ -102,6 +106,20 @@ class IrCodeHelper(context: Context) {
         } ?: false
     }
 
+    private fun isValidNecCode(): Boolean {
+        return inputCode?.let { necCode ->
+            val address = necCode.substring(0, 2).toInt(16)
+            val invertedAddress = necCode.substring(2, 4).toInt(16)
+            val command = necCode.substring(4, 6).toInt(16)
+            val invertedCommand = necCode.substring(6, 8).toInt(16)
+            val isAddressValid = (address.inv() and 0xFF) == invertedAddress
+            val isCommandValid = (command.inv() and 0xFF) == invertedCommand
+            if (!isAddressValid) updateError(ErrorCodes.INVALID_DATA, "Address and inverted address do not match")
+            if (!isCommandValid) updateError(ErrorCodes.INVALID_DATA, "Command and inverted command do not match")
+            isAddressValid && isCommandValid
+        } ?: false
+    }
+
     /** Validates a RAW pulse code by checking frequency. */
     private fun isValidRawPulseCode(): Boolean {
         return inputCode?.let { rawCode ->
@@ -122,7 +140,7 @@ class IrCodeHelper(context: Context) {
     fun hasDeviceEmitter() = deviceIrHelper.hasIrEmitter()
 
     /**The function will check hardware and calls appropriate method.*/
-    private suspend fun performTransmission(
+    private fun performTransmission(
         transmissionMethod: TransmissionMethod,
         frequency: Int,
         pattern: IntArray
@@ -137,8 +155,7 @@ class IrCodeHelper(context: Context) {
                         updateError(ErrorCodes.NO_BUILTIN_IR_BLASTER)
                         return false
                     }
-                    deviceIrHelper.transmit(frequency, pattern)
-                    return true
+                    return deviceIrHelper.transmit(frequency, pattern)
                 }
 
                 TransmissionMethod.AudioPulse -> {
@@ -148,7 +165,7 @@ class IrCodeHelper(context: Context) {
                         return false
                     }
                     return if (audioOutputHelper.prepareAudioOutput()) {
-                        TransmitAsAudioPulse.transmit(frequency, pattern)
+                        runBlocking { TransmitAsAudioPulse.transmit(frequency, pattern) }
                         true
                     } else {
                         Log.e(TAG, "performTransmission: failed to prepare audio sink")
@@ -178,5 +195,6 @@ class IrCodeHelper(context: Context) {
         private const val TAG = "IrCodeHelper"
         private val hexRegex = Regex("^[0-9a-fA-F]{4}(\\s[0-9a-fA-F]{4})*$")
         private val rawRegex = Regex("^\\s*\\b\\d+\\s*(?:,\\s*\\d+\\s*)*\\b\\s*")
+        private val necRegex = Regex("^[0-9a-fA-F]{8}$")
     }
 }

@@ -1,9 +1,12 @@
 package com.abhi.irfortasker
 
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.hardware.ConsumerIrManager
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.Arrays
 
 class DeviceIrHelper(context: Context) {
     private val irManager =
@@ -12,11 +15,17 @@ class DeviceIrHelper(context: Context) {
     /** Whether the device has built-in IR blaster */
     fun hasIrEmitter(): Boolean = irManager?.hasIrEmitter() ?: false
 
-    /** Transmits the ir signal in an IO coroutine.
+    /** Transmits the ir signal.
      * @param frequency The IR carrier frequency in Hertz.
      * @param pattern The alternating on/off pattern in microseconds to transmit.
+     * @return true if transmission was successful, false otherwise.
      */
-    suspend fun transmit(frequency: Int, pattern: IntArray) {
-        withContext(Dispatchers.IO) { irManager?.transmit(frequency, pattern) }
+    fun transmit(frequency: Int, pattern: IntArray): Boolean {
+        return try {
+            irManager?.transmit(frequency, pattern)
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 }

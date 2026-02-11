@@ -32,12 +32,8 @@ class PluginRunner : TaskerPluginRunnerAction<PluginInput, Unit>() {
         return if (irCodeHelper.isCodeValidToTransmit()) {
             try {
                 vibrate(context, 50, shouldVibrate)
-                val isSuccess = runBlocking {
-                    withTimeoutOrNull(requestedTimeout?.toLong() ?: DEFAULT_TIMEOUT_MS) {
-                        irCodeHelper.transmitCode(transmissionMethod)
-                    } ?: false
-                }
-                Log.i(TAG, "run: transmission success $isSuccess")
+                val isSuccess = irCodeHelper.transmitCode(transmissionMethod)
+                Log.i(TAG, "run: transmission $transmissionMethod.")
                 if (isSuccess) {
                     TaskerPluginResultSucess()
                 } else {

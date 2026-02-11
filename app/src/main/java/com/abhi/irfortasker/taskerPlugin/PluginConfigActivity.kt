@@ -105,7 +105,7 @@ class PluginConfigActivity : Activity(), TaskerPluginConfig<PluginInput> {
                     return true
                 }
 
-                CodeType.HEX, CodeType.RAW -> {
+                CodeType.HEX, CodeType.RAW, CodeType.NEC -> {
                     return if (irCodeHelper.isInputValidToSave()) {
                         getString(R.string.input_type_saved, inputType.name).toToast()
                         Log.i(TAG, "isValidInputConfigs: true - valid code ${inputType.name}")
