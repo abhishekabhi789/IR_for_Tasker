@@ -107,16 +107,25 @@ class IrCodeHelper(context: Context) {
     }
 
     private fun isValidNecCode(): Boolean {
-        return inputCode?.let { necCode ->
-            val address = necCode.substring(0, 2).toInt(16)
-            val invertedAddress = necCode.substring(2, 4).toInt(16)
-            val command = necCode.substring(4, 6).toInt(16)
-            val invertedCommand = necCode.substring(6, 8).toInt(16)
-            val isAddressValid = (address.inv() and 0xFF) == invertedAddress
+        //nec - [Inverse Command][Command][Inverse Address][Address]
+        //nec extended - [Inverse Command][Command][16-bit Address]
+        return inputCode?.let { input ->
+            val necCode = input.removePrefix("0x")
+            val command = necCode.take(2).toInt(16)
+            val invertedCommand = necCode.substring(2, 4).toInt(16)
             val isCommandValid = (command.inv() and 0xFF) == invertedCommand
-            if (!isAddressValid) updateError(ErrorCodes.INVALID_DATA, "Address and inverted address do not match")
-            if (!isCommandValid) updateError(ErrorCodes.INVALID_DATA, "Command and inverted command do not match")
-            isAddressValid && isCommandValid
+            if (!isCommandValid) updateError(
+                ErrorCodes.INVALID_DATA,
+                "Command and inverted command do not match"
+            )
+            val address = necCode.substring(4, 6).toInt(16)
+            val invertedAddress = necCode.substring(6, 8).toInt(16)
+            val isAddressValid = (address.inv() and 0xFF) == invertedAddress
+//            if (!isAddressValid) updateError(ErrorCodes.INVALID_DATA, "Address and inverted address do not match")
+            if (!isAddressValid) {
+                Log.d(TAG, "isValidNecCode: address=$address could be 16 bit")
+            }
+            isCommandValid
         } ?: false
     }
 
@@ -195,6 +204,6 @@ class IrCodeHelper(context: Context) {
         private const val TAG = "IrCodeHelper"
         private val hexRegex = Regex("^[0-9a-fA-F]{4}(\\s[0-9a-fA-F]{4})*$")
         private val rawRegex = Regex("^\\s*\\b\\d+\\s*(?:,\\s*\\d+\\s*)*\\b\\s*")
-        private val necRegex = Regex("^[0-9a-fA-F]{8}$")
+        private val necRegex = Regex("^0x[0-9A-Fa-f]{8}$")
     }
 }

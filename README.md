@@ -55,8 +55,8 @@ through the 3.5mm jack.
 ## :white_check_mark: Code Verification and Troubleshooting
 
 To prevent possible crashes and provide error reports with Tasker, the app verifies the input every
-time.It is possible for a valid IR code to be rejected as invalid due to a non-tested scenario,this
-occurrence is rare.
+time. It is possible for a valid IR code to be rejected as invalid due to a non-tested scenario,
+this occurrence is rare.
 
 > [!NOTE]  
 > If you found a code is not working with app, try
@@ -67,15 +67,42 @@ occurrence is rare.
 
 Input can be :
 
-1. [ProntoHex code](https://www.etcwiki.org/wiki/Pronto_Infrared_Format)
+1. ### [ProntoHex code](https://www.etcwiki.org/wiki/Pronto_Infrared_Format)
 
 eg: `0000 006D 0000 0008 0060 0040 0040 0020 0020 0040 0020 0040 0020 0040 0020 0040 0020 0020 0020 0D7A`
 
-2. Raw Pulses
+2. ### Raw Pulses
 
 Carrier frequency in Hertz followed by the alternating on/off pattern in microseconds.
 
 eg:  `38028, 2526, 1684, 1684, 842, 842, 1684, 842, 1684, 842, 1684, 842, 1684, 842, 842, 842, 90789`
+
+3. ### [NEC codes](https://www.sbprojects.net/knowledge/ir/nec.php)
+
+The code must be a 32-bit raw hexadecimal value (for example: `0xFF004040`)
+in the exact format produced
+by [Arduino-IRremote](https://github.com/Arduino-IRremote/Arduino-IRremote)’s `decodedRawData`.
+
+* #### Standard NEC
+
+  eg: `0xEF10DF20` represents:
+    - address `0x20`
+    - inverted address `0xDF`
+    - command `0x10`
+    - inverted command `0xEF`
+
+
+* #### NEC-Extended
+
+  eg: `0xFF004040` represents:
+    - 16-bit address `0x4040`
+    - 8-bit command `0x00`
+    - inverted command `0xFF`
+
+> [!NOTE]
+> This is NOT the logical NEC format (address + command order),
+> but the raw LSB-first 32-bit value as printed
+> by [Arduino-IRremote](https://github.com/Arduino-IRremote/Arduino-IRremote).
 
 ## :books: References
 
