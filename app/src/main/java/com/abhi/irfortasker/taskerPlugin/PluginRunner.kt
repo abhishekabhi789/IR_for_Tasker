@@ -11,8 +11,14 @@ import com.abhi.irfortasker.IrCodeHelper
 import com.joaomgcd.taskerpluginlibrary.action.TaskerPluginRunnerAction
 import com.joaomgcd.taskerpluginlibrary.input.TaskerInput
 import com.joaomgcd.taskerpluginlibrary.runner.TaskerPluginResult
+import com.joaomgcd.taskerpluginlibrary.runner.TaskerPluginResultError
 import com.joaomgcd.taskerpluginlibrary.runner.TaskerPluginResultErrorWithOutput
 import com.joaomgcd.taskerpluginlibrary.runner.TaskerPluginResultSucess
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 
 class PluginRunner : TaskerPluginRunnerAction<PluginInput, Unit>() {
@@ -30,22 +36,39 @@ class PluginRunner : TaskerPluginRunnerAction<PluginInput, Unit>() {
         return if (irCodeHelper.isCodeValidToTransmit()) {
             try {
                 vibrate(context, 50, shouldVibrate)
-                val isSuccess = irCodeHelper.transmitCode(transmissionMethod)
+                val isSuccess: Boolean? = runBlocking {
+                    //obey timeout set by tasker
+                    withTimeoutOrNull(requestedTimeout?.toLong() ?: DEFAULT_TIMEOUT_MS) {
+                        withContext(Dispatchers.IO) {
+                            irCodeHelper.transmitCode(transmissionMethod)
+                        }
+                    }
+                }
                 Log.i(TAG, "run: transmission $transmissionMethod.")
-                if (isSuccess) {
-                    TaskerPluginResultSucess()
-                } else {
-                    irCodeHelper.errorDetails?.let { (err, errMsg) ->
-                        vibrate(context, 500, shouldVibrate)
-                        Log.e(TAG, "run: Error: $errMsg | input: $inputCode")
-                        return TaskerPluginResultErrorWithOutput(err, errMsg)
-                    } ?: ErrorCodes.ERROR.let { error ->
-                        TaskerPluginResultErrorWithOutput(error.code, error.message)
+                when (isSuccess) {
+                    true -> {
+                        TaskerPluginResultSucess()
+                    }
+
+                    false -> {
+                        irCodeHelper.errorDetails?.let { (err, errMsg) ->
+                            vibrate(context, 500, shouldVibrate)
+                            Log.e(TAG, "run: Error: $errMsg | input: $inputCode")
+                            return TaskerPluginResultErrorWithOutput(err, errMsg)
+                        } ?: ErrorCodes.ERROR.let { error ->
+                            TaskerPluginResultErrorWithOutput(error.code, error.message)
+                        }
+                    }
+
+                    null -> {
+                        TaskerPluginResultError(CancellationException("timeout"))
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "run: unknown error during transmission", e)
                 TaskerPluginResultErrorWithOutput(5, e.message ?: "unknown error")
+            } finally {
+                Log.d(TAG, "run: transmission completed")
             }
         } else {
             irCodeHelper.errorDetails?.let { (err, errMsg) ->
