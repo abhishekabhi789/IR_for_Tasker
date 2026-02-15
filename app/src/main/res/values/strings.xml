@@ -6,7 +6,7 @@
     <string name="input_vibrate_option_label">Vibrate when transmitting</string>
     <string name="input_transmission_method">Transmission method</string>
     <!--    input config ui-->
-    <string name="input_code_field_hint">Enter ProntoHEX or Raw pulse code to transmit</string>
+    <string name="input_code_field_hint">Enter ProntoHEX, NEC or Raw pulse code to transmit</string>
     <string name="input_variable_import_button_label">Import relevant variables from Tasker</string>
     <string name="input_variable_import_dialog_title">Choose the variable containing IR signal</string>
     <string name="select_transmission_method">Select Transmission Method</string>
